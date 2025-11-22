@@ -8,6 +8,16 @@ from sentence_transformers import SentenceTransformer
 
 app = FastAPI()
 
+# Enable CORS for all origins (for development purposes)
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 ### Load necessary data at startup
 # Build paths to embeddings and books files as relative to this file
 directory = Path(__file__).parent.parent
@@ -49,7 +59,7 @@ def home():
 @app.get("/books/")
 def get_books():
     """ 
-    Load book embeddings and metadata, merge them, and return as JSON response.
+    Endpoint to get all books with their reduced coordinates.
     """
     # Check if embeddings were loaded successfully and return an error message if not
     if not data_loaded:
@@ -68,23 +78,29 @@ def get_books():
         return JSONResponse(content=data)
 
 
+
 @app.post("/books/new/")
 async def add_book(request: Request):
-    """ Endpoint to add a new book embeding and return its reduced coordinates. """
-    data = await request.json()
-    new_book = data
-    print(new_book)
-    # add embedding and reduce dimensions
-    new_embedding = model.encode([new_book['plot_summary']])
-    new_point = reducer.transform(new_embedding)
-    book = {
-        "title": new_book['title'],
-        "author": new_book['author'],
-        "x": float(new_point[0][0]),
-        "y": float(new_point[0][1])
-    }
+    """ Endpoint to add a new book embeding and return its reduced coordinates. 
+    Expects a JSON payload with 'title', 'author', and 'plot_summary'.
+    """
+    try:
+        data = await request.json()
+        new_book = data
+        #print(new_book)
+        # add embedding and reduce dimensions
+        new_embedding = model.encode([new_book['plot_summary']])
+        new_point = reducer.transform(new_embedding)
+        book = {
+            "title": new_book['title'],
+            "author": new_book['author'],
+            "x": float(new_point[0][0]),
+            "y": float(new_point[0][1])
+        }
 
-    return {"message": "Book received", "book": book}
+        return {"message": "Book received", "book": book}
+    except Exception as e:
+        return {"error": "wrong data format"}
 
 
 
