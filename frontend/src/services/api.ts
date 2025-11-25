@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GraphData, NewBookRequest, NewBookResponse } from '../types/graph';
+import type { GraphData, NewBookRequest, NewBookResponse } from '../types/graph';
 
 const API_BASE_URL = '/api';
 

@@ -8,7 +8,7 @@ import {
   Box,
   Chip,
 } from '@mui/material';
-import { GraphNode } from '../types/graph';
+import type { GraphNode } from '../types/graph';
 import PersonIcon from '@mui/icons-material/Person';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 

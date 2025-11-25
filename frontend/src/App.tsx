@@ -5,7 +5,7 @@ import { Layout } from './components/Layout';
 import { GraphVisualization } from './components/GraphVisualization';
 import { AddBookForm } from './components/AddBookForm';
 import { BookDetailsPanel } from './components/BookDetailsPanel';
-import { GraphData, GraphNode } from './types/graph';
+import type { GraphData, GraphNode } from './types/graph';
 import { api } from './services/api';
 
 const darkTheme = createTheme({
@@ -22,6 +22,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<GraphNode | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [maxDistance, setMaxDistance] = useState<number>(0); // 0 = unlimited
 
   const loadGraph = async () => {
     setLoading(true);
@@ -65,6 +66,9 @@ function App() {
           graphData={graphData}
           loading={loading}
           onNodeClick={handleNodeClick}
+          maxDistance={maxDistance}
+          onMaxDistanceChange={setMaxDistance}
+          onRerender={loadGraph}
         />
         <BookDetailsPanel
           book={selectedBook}

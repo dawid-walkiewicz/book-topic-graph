@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 import umap
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import math
 
 app = FastAPI()
 
@@ -116,14 +117,27 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
 
     # Prepare nodes
     nodes = []
+    valid_indices = set()  # Track which indices have valid coordinates
     for idx, row in books_df.iterrows():
+        x_val = embeddings_2d[idx, 0]
+        y_val = embeddings_2d[idx, 1]
+
+        # Skip nodes with NaN or infinite coordinates
+        if np.isnan(x_val) or np.isnan(y_val) or np.isinf(x_val) or np.isinf(y_val):
+            continue
+
+        # Also check if the full embedding has any NaN/inf values
+        if np.any(np.isnan(embeddings_full[idx])) or np.any(np.isinf(embeddings_full[idx])):
+            continue
+
+        valid_indices.add(idx)
         node = {
             "id": f"book_{idx}",
             "title": row.get('book_title', 'Unknown'),
             "author": row.get('author', 'Unknown'),
             "publication_date": row.get('publication_date', None),
-            "x": float(embeddings_2d[idx, 0]),
-            "y": float(embeddings_2d[idx, 1])
+            "x": float(x_val),
+            "y": float(y_val)
         }
         nodes.append(node)
 
@@ -136,22 +150,40 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
     batch_size = 1000
     n_books = len(embeddings_full)
 
+    # Only compute similarities for valid books
     for batch_start in range(0, n_books, batch_size):
         batch_end = min(batch_start + batch_size, n_books)
-        batch_embeddings = embeddings_full[batch_start:batch_end]
+
+        # Skip batches that don't contain any valid indices
+        batch_indices = [i for i in range(batch_start, batch_end) if i in valid_indices]
+        if not batch_indices:
+            continue
+
+        batch_embeddings = embeddings_full[batch_indices]
 
         # Calculate similarity of this batch against all books
-        similarities = cosine_similarity(batch_embeddings, embeddings_full)
+        # Use only valid embeddings to avoid NaN propagation
+        valid_embeddings = embeddings_full[list(valid_indices)]
+        similarities = cosine_similarity(batch_embeddings, valid_embeddings)
 
         # For each book in the batch, find top-k similar books
+        valid_indices_list = list(valid_indices)
         for i, sim_row in enumerate(similarities):
-            book_idx = batch_start + i
+            book_idx = batch_indices[i]
 
             # Get indices of top-k+1 most similar books (including itself)
-            top_indices = np.argsort(sim_row)[::-1][1:top_k+1]  # Skip first (itself)
+            top_k_positions = np.argsort(sim_row)[::-1][1:top_k+1]  # Skip first (itself)
 
-            for neighbor_idx in top_indices:
-                similarity = float(sim_row[neighbor_idx])
+            for pos in top_k_positions:
+                neighbor_idx = valid_indices_list[pos]
+
+                similarity = sim_row[pos]
+
+                # Skip if similarity is NaN or infinite
+                if np.isnan(similarity) or np.isinf(similarity):
+                    continue
+
+                similarity = float(similarity)
 
                 # Only add edge if similarity exceeds threshold
                 if similarity >= threshold:
@@ -164,10 +196,25 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
                         }
                         links.append(link)
 
-    return {
-        "nodes": nodes,
-        "links": links
+    # Final safety check: recursively clean any remaining NaN/Inf values
+    def clean_value(val):
+        """Replace NaN/Inf with None for JSON serialization"""
+        if isinstance(val, float):
+            if math.isnan(val) or math.isinf(val):
+                return None
+            return val
+        elif isinstance(val, dict):
+            return {k: clean_value(v) for k, v in val.items()}
+        elif isinstance(val, list):
+            return [clean_value(item) for item in val]
+        return val
+
+    response_data = {
+        "nodes": clean_value(nodes),
+        "links": clean_value(links)
     }
+
+    return response_data
 
 
 @app.post("/books/new/")

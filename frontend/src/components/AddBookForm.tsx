@@ -8,7 +8,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { api } from '../services/api';
-import { NewBookRequest } from '../types/graph';
+import type { NewBookRequest } from '../types/graph';
 
 interface AddBookFormProps {
   onBookAdded: () => void;

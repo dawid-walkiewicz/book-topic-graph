@@ -1,24 +1,92 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { GraphData, GraphNode } from '../types/graph';
+import type { GraphData, GraphNode, GraphLink } from '../types/graph';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { GraphControls } from './GraphControls';
 
 interface GraphVisualizationProps {
   graphData: GraphData | null;
   loading: boolean;
   onNodeClick: (node: GraphNode) => void;
+  maxDistance: number;
+  onMaxDistanceChange: (value: number) => void;
+  onRerender: () => void;
 }
 
 export const GraphVisualization = ({
   graphData,
   loading,
-  onNodeClick
+  onNodeClick,
+  maxDistance,
+  onMaxDistanceChange,
+  onRerender
 }: GraphVisualizationProps) => {
   const graphRef = useRef<any>();
 
   const handleNodeClick = useCallback((node: any) => {
     onNodeClick(node as GraphNode);
   }, [onNodeClick]);
+
+  // Filter links by distance
+  const filteredGraphData = useMemo(() => {
+    if (!graphData) return null;
+
+    // If maxDistance is 0, show all links (unlimited)
+    if (maxDistance === 0) {
+      return graphData;
+    }
+
+    // Create a map of node positions for quick lookup
+    const nodePositions = new Map<string, { x: number; y: number }>();
+    graphData.nodes.forEach(node => {
+      if (node.x !== undefined && node.y !== undefined) {
+        nodePositions.set(node.id, { x: node.x, y: node.y });
+      }
+    });
+
+    // Filter links based on Euclidean distance
+    let debugCount = 0;
+    const filteredLinks = graphData.links.filter((link: any) => {
+      // Handle both string IDs and object references (ForceGraph mutates these)
+      const sourceId = typeof link.source === 'object' && link.source !== null
+        ? link.source.id
+        : link.source;
+      const targetId = typeof link.target === 'object' && link.target !== null
+        ? link.target.id
+        : link.target;
+
+      const sourcePos = nodePositions.get(sourceId);
+      const targetPos = nodePositions.get(targetId);
+
+      if (!sourcePos || !targetPos) {
+        console.warn('Missing positions for link:', { sourceId, targetId });
+        return false;
+      }
+
+      // Calculate Euclidean distance
+      const distance = Math.sqrt(
+        Math.pow(sourcePos.x - targetPos.x, 2) +
+        Math.pow(sourcePos.y - targetPos.y, 2)
+      );
+
+      const shouldShow = distance <= maxDistance;
+
+      // Debug logging (first 5 links only)
+      if (debugCount < 5) {
+        console.log('Link distance:', distance.toFixed(2), 'maxDistance:', maxDistance, 'show:', shouldShow);
+        debugCount++;
+      }
+
+      return shouldShow;
+    });
+
+    console.log(`Filtered ${filteredLinks.length} links out of ${graphData.links.length} (maxDistance: ${maxDistance})`);
+
+    return {
+      nodes: graphData.nodes,
+      links: filteredLinks
+    };
+  }, [graphData, maxDistance]);
 
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.title;
@@ -72,10 +140,15 @@ export const GraphVisualization = ({
   }
 
   return (
-    <Box width="100%" height="100vh">
+    <Box width="100%" height="100vh" position="relative">
+      <GraphControls
+        maxDistance={maxDistance}
+        onMaxDistanceChange={onMaxDistanceChange}
+        onRerender={onRerender}
+      />
       <ForceGraph2D
         ref={graphRef}
-        graphData={graphData}
+        graphData={filteredGraphData || graphData}
         nodeId="id"
         nodeLabel={(node: any) => `${node.title}\n${node.author}`}
         nodeCanvasObject={nodeCanvasObject}
