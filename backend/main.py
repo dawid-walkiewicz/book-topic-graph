@@ -7,8 +7,13 @@ import umap
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import math
+from typing import Dict, Any
 
 app = FastAPI()
+
+# Cache for computed graph data
+# Key format: "top_k_threshold" -> Value: {"nodes": [...], "links": [...]}
+graph_cache: Dict[str, Dict[str, Any]] = {}
 
 # Enable CORS for all origins (for development purposes)
 from fastapi.middleware.cors import CORSMiddleware
@@ -115,6 +120,14 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
     if embeddings_full is None:
         return {"error": "Full embeddings not available. Cannot compute similarities."}
 
+    # Check cache first
+    cache_key = f"{top_k}_{threshold}"
+    if cache_key in graph_cache:
+        print(f"Cache HIT for {cache_key}")
+        return graph_cache[cache_key]
+
+    print(f"Cache MISS for {cache_key} - Computing graph...")
+
     # Prepare nodes
     nodes = []
     valid_indices = set()  # Track which indices have valid coordinates
@@ -214,6 +227,10 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
         "links": clean_value(links)
     }
 
+    # Store in cache
+    graph_cache[cache_key] = response_data
+    print(f"Cached result for {cache_key} - {len(nodes)} nodes, {len(links)} links")
+
     return response_data
 
 
@@ -235,6 +252,10 @@ async def add_book(request: Request):
             "x": float(new_point[0][0]),
             "y": float(new_point[0][1])
         }
+
+        # Clear graph cache since a new book was added
+        graph_cache.clear()
+        print("Graph cache cleared due to new book addition")
 
         return {"message": "Book received", "book": book}
     except Exception as e:
