@@ -11,6 +11,8 @@ interface GraphVisualizationProps {
   maxDistance: number;
   onMaxDistanceChange: (value: number) => void;
   onRerender: () => void;
+  nodeSize: number;
+  onNodeSizeChange: (value: number) => void;
 }
 
 export const GraphVisualization = ({
@@ -19,7 +21,9 @@ export const GraphVisualization = ({
   onNodeClick,
   maxDistance,
   onMaxDistanceChange,
-  onRerender
+  onRerender,
+  nodeSize,
+  onNodeSizeChange
 }: GraphVisualizationProps) => {
   const graphRef = useRef<any>();
 
@@ -27,66 +31,22 @@ export const GraphVisualization = ({
     onNodeClick(node as GraphNode);
   }, [onNodeClick]);
 
+  const handleCenterView = useCallback(() => {
+    if (graphRef.current) {
+      graphRef.current.zoomToFit(1000, 50); // 1 second animation, 50px padding
+    }
+  }, []);
+
   // Filter links by distance
   const filteredGraphData = useMemo(() => {
     if (!graphData) return null;
 
-    // If maxDistance is 0, show all links (unlimited)
-    if (maxDistance === 0) {
-      return graphData;
-    }
-
-    // Create a map of node positions for quick lookup
-    const nodePositions = new Map<string, { x: number; y: number }>();
-    graphData.nodes.forEach(node => {
-      if (node.x !== undefined && node.y !== undefined) {
-        nodePositions.set(node.id, { x: node.x, y: node.y });
-      }
-    });
-
-    // Filter links based on Euclidean distance
-    let debugCount = 0;
-    const filteredLinks = graphData.links.filter((link: any) => {
-      // Handle both string IDs and object references (ForceGraph mutates these)
-      const sourceId = typeof link.source === 'object' && link.source !== null
-        ? link.source.id
-        : link.source;
-      const targetId = typeof link.target === 'object' && link.target !== null
-        ? link.target.id
-        : link.target;
-
-      const sourcePos = nodePositions.get(sourceId);
-      const targetPos = nodePositions.get(targetId);
-
-      if (!sourcePos || !targetPos) {
-        console.warn('Missing positions for link:', { sourceId, targetId });
-        return false;
-      }
-
-      // Calculate Euclidean distance
-      const distance = Math.sqrt(
-        Math.pow(sourcePos.x - targetPos.x, 2) +
-        Math.pow(sourcePos.y - targetPos.y, 2)
-      );
-
-      const shouldShow = distance <= maxDistance;
-
-      // Debug logging (first 5 links only)
-      if (debugCount < 5) {
-        console.log('Link distance:', distance.toFixed(2), 'maxDistance:', maxDistance, 'show:', shouldShow);
-        debugCount++;
-      }
-
-      return shouldShow;
-    });
-
-    console.log(`Filtered ${filteredLinks.length} links out of ${graphData.links.length} (maxDistance: ${maxDistance})`);
-
+    // Disable all connections - show only nodes
     return {
       nodes: graphData.nodes,
-      links: filteredLinks
+      links: [] // Empty array = no connections displayed
     };
-  }, [graphData, maxDistance]);
+  }, [graphData]);
 
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.title;
@@ -95,7 +55,7 @@ export const GraphVisualization = ({
 
     // Draw node circle
     ctx.beginPath();
-    ctx.arc(node.x, node.y, 5, 0, 2 * Math.PI, false);
+    ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
     ctx.fillStyle = '#1976d2';
     ctx.fill();
 
@@ -104,9 +64,9 @@ export const GraphVisualization = ({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#333';
-      ctx.fillText(label, node.x, node.y + 10);
+      ctx.fillText(label, node.x, node.y + nodeSize + 5);
     }
-  }, []);
+  }, [nodeSize]);
 
   if (loading) {
     return (
@@ -145,6 +105,9 @@ export const GraphVisualization = ({
         maxDistance={maxDistance}
         onMaxDistanceChange={onMaxDistanceChange}
         onRerender={onRerender}
+        nodeSize={nodeSize}
+        onNodeSizeChange={onNodeSizeChange}
+        onCenterView={handleCenterView}
       />
       <ForceGraph2D
         ref={graphRef}

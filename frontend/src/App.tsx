@@ -23,6 +23,7 @@ function App() {
   const [selectedBook, setSelectedBook] = useState<GraphNode | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [maxDistance, setMaxDistance] = useState<number>(0); // 0 = unlimited
+  const [nodeSize, setNodeSize] = useState<number>(5); // Default node size in pixels
 
   const loadGraph = async () => {
     setLoading(true);
@@ -69,6 +70,8 @@ function App() {
           maxDistance={maxDistance}
           onMaxDistanceChange={setMaxDistance}
           onRerender={loadGraph}
+          nodeSize={nodeSize}
+          onNodeSizeChange={setNodeSize}
         />
         <BookDetailsPanel
           book={selectedBook}
