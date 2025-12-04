@@ -21,17 +21,17 @@ app.add_middleware(
 ### Load necessary data at startup
 # Build paths to embeddings and books files as relative to this file
 directory = Path(__file__).parent.parent
-embeddings_file = directory / 'data' / 'book_embeddings_2d.npy'
+umap_embeddings = directory / 'data' / 'umap_embeddings.npy'
 book_file = directory / 'data' / 'processed_book_data.csv'
 
 
 # Check if embeddings were loaded successfully and return an error message if not
 data_loaded = False
-if not embeddings_file.exists() or not book_file.exists():
+if not umap_embeddings.exists() or not book_file.exists():
     print("Data files not found. Please ensure the embeddings and book data files exist.")
 else:
     # Load embeddings and book data
-    embeddings = np.load(embeddings_file)
+    embeddings = np.load(umap_embeddings)
     books_df = pd.read_csv(book_file)
     data_loaded = True
 
