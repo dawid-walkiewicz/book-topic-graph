@@ -35,7 +35,7 @@ book_file = directory / 'data' / 'processed_book_data.csv'
 
 # Check if embeddings were loaded successfully and return an error message if not
 data_loaded = False
-embeddings_2d = None
+umap_embeddings = None
 embeddings_full = None
 books_df = None
 
@@ -69,7 +69,7 @@ if data_loaded and embeddings_full is not None:
     reducer.fit(embeddings_full)
 elif data_loaded:
     # Fallback to 2D embeddings if full embeddings not available
-    reducer.fit(embeddings_2d)
+    reducer.fit(umap_embeddings)
 
 
 
