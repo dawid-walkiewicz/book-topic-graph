@@ -28,7 +28,7 @@ app.add_middleware(
 ### Load necessary data at startup
 # Build paths to embeddings and books files as relative to this file
 directory = Path(__file__).parent.parent
-embeddings_2d_file = directory / 'data' / 'book_embeddings_2d.npy'
+umap_embeddings_file = directory / 'data' / 'umap_embeddings.npy'
 embeddings_full_file = directory / 'data' / 'book_embeddings.npy'
 book_file = directory / 'data' / 'processed_book_data.csv'
 
@@ -39,11 +39,11 @@ embeddings_2d = None
 embeddings_full = None
 books_df = None
 
-if not embeddings_2d_file.exists() or not book_file.exists():
+if not umap_embeddings_file.exists() or not book_file.exists():
     print("Data files not found. Please ensure the embeddings and book data files exist.")
 else:
     # Load embeddings and book data
-    embeddings_2d = np.load(embeddings_2d_file)
+    umap_embeddings = np.load(umap_embeddings_file)
     books_df = pd.read_csv(book_file)
     data_loaded = True
 
@@ -90,8 +90,8 @@ def get_books():
     else:
         # Load embeddings and book data and merge them
         books_response = books_df.copy()
-        books_response['x'] = embeddings_2d[:, 0]
-        books_response['y'] = embeddings_2d[:, 1]
+        books_response['x'] = umap_embeddings[:, 0]
+        books_response['y'] = umap_embeddings[:, 1]
         # remove unnecessary columns
         books_response = books_response.drop(['plot_summary','processed_summary', 'genres', 'wiki_id', 'freebase_id'], axis=1, errors='ignore')
         # Replace NaN with None for JSON serialization
@@ -132,8 +132,8 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
     nodes = []
     valid_indices = set()  # Track which indices have valid coordinates
     for idx, row in books_df.iterrows():
-        x_val = embeddings_2d[idx, 0]
-        y_val = embeddings_2d[idx, 1]
+        x_val = umap_embeddings[idx, 0]
+        y_val = umap_embeddings[idx, 1]
 
         # Skip nodes with NaN or infinite coordinates
         if np.isnan(x_val) or np.isnan(y_val) or np.isinf(x_val) or np.isinf(y_val):

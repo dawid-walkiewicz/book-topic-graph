@@ -10,7 +10,7 @@ CMU Book Summary Dataset: https://www.kaggle.com/datasets/ymaricar/cmu-book-summ
 
 1. Uruchom notebook `data/data_processing.ipynb` aby wygenerować niezbędne pliki:
    - `book_embeddings.npy` - embeddingi 384D
-   - `book_embeddings_2d.npy` - współrzędne 2D (UMAP)
+   - `umap_embeddings.npy` - współrzędne 2D (UMAP)
    - `processed_book_data.csv` - metadane książek
 
 2. Pliki te są wymagane do uruchomienia backendu.
@@ -71,8 +71,8 @@ Frontend będzie dostępny pod adresem: http://localhost:5173
 
 ### Backend
 - FastAPI
-- SentenceTransformers (all-MiniLM-L6-v2)
-- UMAP (redukcja wymiarowości)
+- SentenceTransformers
+- UMAP
 - NumPy, Pandas, scikit-learn
 
 ### Frontend
