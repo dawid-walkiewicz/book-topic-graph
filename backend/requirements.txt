@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+pandas
+umap-learn
+sentence-transformers
+scikit-learn
+
