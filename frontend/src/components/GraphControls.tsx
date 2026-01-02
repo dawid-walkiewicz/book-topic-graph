@@ -3,8 +3,6 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 
 interface GraphControlsProps {
-  maxDistance: number;
-  onMaxDistanceChange: (value: number) => void;
   onRerender: () => void;
   nodeSize: number;
   onNodeSizeChange: (value: number) => void;
@@ -12,17 +10,11 @@ interface GraphControlsProps {
 }
 
 export const GraphControls = ({
-  maxDistance,
-  onMaxDistanceChange,
   onRerender,
   nodeSize,
   onNodeSizeChange,
   onCenterView,
 }: GraphControlsProps) => {
-  const handleSliderChange = (_event: Event, value: number | number[]) => {
-    onMaxDistanceChange(value as number);
-  };
-
   const handleNodeSizeChange = (_event: Event, value: number | number[]) => {
     onNodeSizeChange(value as number);
   };
@@ -42,12 +34,12 @@ export const GraphControls = ({
       }}
     >
       <Typography variant="h6" gutterBottom>
-        Kontrolki Grafu
+        Kontrolki
       </Typography>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" gutterBottom>
-          Rozmiar węzłów: {nodeSize}px
+          Rozmiar punktów: {nodeSize}px
         </Typography>
         <Slider
           value={nodeSize}
@@ -67,29 +59,6 @@ export const GraphControls = ({
         />
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" gutterBottom>
-          Maksymalna odległość:{" "}
-          {maxDistance === 0 ? "Nieograniczona" : maxDistance}
-        </Typography>
-        <Slider
-          value={maxDistance}
-          onChange={handleSliderChange}
-          min={0}
-          max={3000}
-          step={50}
-          valueLabelDisplay="auto"
-          marks={[
-            { value: 0, label: "0 (wszystkie)" },
-            { value: 1500, label: "1500" },
-            { value: 3000, label: "3000" },
-          ]}
-        />
-        <Typography variant="caption" color="text.secondary">
-          0 = pokaż wszystkie połączenia (obecnie wyłączone)
-        </Typography>
-      </Box>
-
       <Button
         variant="outlined"
         fullWidth
@@ -106,7 +75,7 @@ export const GraphControls = ({
         startIcon={<RefreshIcon />}
         onClick={onRerender}
       >
-        Odśwież Graf
+        Odśwież Dane
       </Button>
     </Paper>
   );

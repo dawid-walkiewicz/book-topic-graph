@@ -8,7 +8,7 @@ import { BookDetailsPanel } from './components/BookDetailsPanel';
 import type { GraphData, GraphNode } from './types/graph';
 import { api } from './services/api';
 
-const darkTheme = createTheme({
+const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -22,23 +22,22 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<GraphNode | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [maxDistance, setMaxDistance] = useState<number>(0); // 0 = unlimited
-  const [nodeSize, setNodeSize] = useState<number>(5); // Default node size in pixels
+  const [nodeSize, setNodeSize] = useState<number>(2);
 
-  const loadGraph = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await api.getGraph(5, 0.5);
+      const data = await api.getNodes();
       setGraphData(data);
     } catch (error) {
-      console.error('Error loading graph:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadGraph();
+    loadData();
   }, []);
 
   const handleNodeClick = (node: GraphNode) => {
@@ -51,12 +50,11 @@ function App() {
   };
 
   const handleBookAdded = () => {
-    // Reload the graph when a new book is added
-    loadGraph();
+    loadData();
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
       <Layout
         drawerContent={
@@ -67,9 +65,7 @@ function App() {
           graphData={graphData}
           loading={loading}
           onNodeClick={handleNodeClick}
-          maxDistance={maxDistance}
-          onMaxDistanceChange={setMaxDistance}
-          onRerender={loadGraph}
+          onRerender={loadData}
           nodeSize={nodeSize}
           onNodeSizeChange={setNodeSize}
         />

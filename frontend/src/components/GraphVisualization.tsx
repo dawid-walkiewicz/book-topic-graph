@@ -1,6 +1,8 @@
-import { useRef, useCallback, useMemo } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
-import type { GraphData, GraphNode, GraphLink } from '../types/graph';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import DeckGL from '@deck.gl/react';
+import { ScatterplotLayer } from '@deck.gl/layers';
+import { OrthographicView } from '@deck.gl/core';
+import type { GraphData, GraphNode } from '../types/graph';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { GraphControls } from './GraphControls';
 
@@ -8,8 +10,6 @@ interface GraphVisualizationProps {
   graphData: GraphData | null;
   loading: boolean;
   onNodeClick: (node: GraphNode) => void;
-  maxDistance: number;
-  onMaxDistanceChange: (value: number) => void;
   onRerender: () => void;
   nodeSize: number;
   onNodeSizeChange: (value: number) => void;
@@ -19,54 +19,76 @@ export const GraphVisualization = ({
   graphData,
   loading,
   onNodeClick,
-  maxDistance,
-  onMaxDistanceChange,
   onRerender,
   nodeSize,
   onNodeSizeChange
 }: GraphVisualizationProps) => {
-  const graphRef = useRef<any>();
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [webglReady, setWebglReady] = useState(false);
 
-  const handleNodeClick = useCallback((node: any) => {
-    onNodeClick(node as GraphNode);
-  }, [onNodeClick]);
+  const [viewState, setViewState] = useState({
+    target: [0, 0] as [number, number],
+    zoom: 8,
+    minZoom: -2,
+    maxZoom: 14,
+  });
 
-  const handleCenterView = useCallback(() => {
-    if (graphRef.current) {
-      graphRef.current.zoomToFit(1000, 50); // 1 second animation, 50px padding
-    }
-  }, []);
+  // Calculate data bounds
+  const dataBounds = useMemo(() => {
+    if (!graphData?.nodes?.length) return null;
 
-  // Filter links by distance
-  const filteredGraphData = useMemo(() => {
-    if (!graphData) return null;
+    const xs = graphData.nodes.map(n => n.x || 0);
+    const ys = graphData.nodes.map(n => n.y || 0);
 
-    // Disable all connections - show only nodes
     return {
-      nodes: graphData.nodes,
-      links: [] // Empty array = no connections displayed
+      centerX: (Math.min(...xs) + Math.max(...xs)) / 2,
+      centerY: (Math.min(...ys) + Math.max(...ys)) / 2,
     };
   }, [graphData]);
 
-  const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.title;
-    const fontSize = 12 / globalScale;
-    ctx.font = `${fontSize}px Sans-Serif`;
-
-    // Draw node circle
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI, false);
-    ctx.fillStyle = '#1976d2';
-    ctx.fill();
-
-    // Draw label on hover
-    if (globalScale > 1.5) {
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#333';
-      ctx.fillText(label, node.x, node.y + nodeSize + 5);
+  // Center view when data loads
+  useEffect(() => {
+    if (dataBounds) {
+      setViewState(prev => ({
+        ...prev,
+        target: [dataBounds.centerX, dataBounds.centerY],
+      }));
     }
-  }, [nodeSize]);
+  }, [dataBounds]);
+
+  const handleCenterView = useCallback(() => {
+    if (!dataBounds) return;
+    setViewState(prev => ({
+      ...prev,
+      target: [dataBounds.centerX, dataBounds.centerY],
+      zoom: 8,
+    }));
+  }, [dataBounds]);
+
+  const scatterLayer = useMemo(() => {
+    if (!graphData?.nodes?.length) return null;
+
+    return new ScatterplotLayer<GraphNode>({
+      id: 'books-scatter',
+      data: graphData.nodes,
+      pickable: true,
+      getPosition: (d: GraphNode) => [d.x || 0, d.y || 0],
+      getRadius: nodeSize,
+      radiusUnits: 'pixels',
+      radiusMinPixels: 1,
+      radiusMaxPixels: 50,
+      getFillColor: [25, 118, 210, 200],
+      onHover: (info) => setHoveredNode(info.object || null),
+      onClick: (info) => {
+        if (info.object) {
+          onNodeClick(info.object);
+        }
+      },
+      updateTriggers: {
+        getRadius: nodeSize,
+      },
+    });
+  }, [graphData, nodeSize, onNodeClick]);
 
   if (loading) {
     return (
@@ -79,12 +101,12 @@ export const GraphVisualization = ({
         gap={2}
       >
         <CircularProgress size={60} />
-        <Typography variant="h6">Wczytuję graf książek...</Typography>
+        <Typography variant="h6">Wczytuję dane książek...</Typography>
       </Box>
     );
   }
 
-  if (!graphData || graphData.nodes.length === 0) {
+  if (!graphData?.nodes?.length) {
     return (
       <Box
         display="flex"
@@ -100,33 +122,74 @@ export const GraphVisualization = ({
   }
 
   return (
-    <Box width="100%" height="100vh" position="relative">
+    <Box
+      width="100%"
+      height="100vh"
+      position="relative"
+      sx={{ background: '#f5f5f5' }}
+    >
       <GraphControls
-        maxDistance={maxDistance}
-        onMaxDistanceChange={onMaxDistanceChange}
         onRerender={onRerender}
         nodeSize={nodeSize}
         onNodeSizeChange={onNodeSizeChange}
         onCenterView={handleCenterView}
       />
-      <ForceGraph2D
-        ref={graphRef}
-        graphData={filteredGraphData || graphData}
-        nodeId="id"
-        nodeLabel={(node: any) => `${node.title}\n${node.author}`}
-        nodeCanvasObject={nodeCanvasObject}
-        nodeCanvasObjectMode={() => 'replace'}
-        onNodeClick={handleNodeClick}
-        linkWidth={(link: any) => Math.max(0.5, link.value * 2)}
-        linkColor={() => 'rgba(150, 150, 150, 0.3)'}
-        linkDirectionalParticles={0}
-        cooldownTime={3000}
-        d3AlphaDecay={0.02}
-        d3VelocityDecay={0.3}
-        enableNodeDrag={true}
-        enableZoomInteraction={true}
-        enablePanInteraction={true}
+      <DeckGL
+        views={new OrthographicView({ id: 'ortho', flipY: false })}
+        viewState={viewState}
+        onViewStateChange={({ viewState: vs }) => setViewState(vs as typeof viewState)}
+        controller={true}
+        layers={scatterLayer ? [scatterLayer] : []}
+        getCursor={({ isHovering }) => isHovering ? 'pointer' : 'grab'}
+        onLoad={() => setWebglReady(true)}
+        onError={(error) => console.warn('DeckGL error:', error)}
       />
+      {!webglReady && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            zIndex: 1000,
+          }}
+        >
+          <CircularProgress size={60} />
+          <Typography variant="h6">Renderowanie punktów...</Typography>
+        </Box>
+      )}
+      {hoveredNode && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            p: 2,
+            borderRadius: 1,
+            boxShadow: 3,
+            maxWidth: 300,
+            zIndex: 1000,
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold">
+            {hoveredNode.title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {hoveredNode.author}
+          </Typography>
+          {hoveredNode.publication_date && (
+            <Typography variant="caption" color="text.secondary">
+              {hoveredNode.publication_date}
+            </Typography>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

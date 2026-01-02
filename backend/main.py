@@ -101,6 +101,41 @@ def get_books():
         return JSONResponse(content=data)
 
 
+@app.get("/api/nodes")
+def get_nodes():
+    """
+    Lightweight endpoint - returns only node positions for scatter plot visualization.
+    No similarity computation, much faster than /api/graph.
+    """
+    if not data_loaded:
+        return {"error": "Data could not be loaded."}
+
+    def clean_value(val):
+        """Convert pandas NaN/NaT to None for JSON serialization"""
+        if pd.isna(val):
+            return None
+        return val
+
+    nodes = []
+    for idx, row in books_df.iterrows():
+        x_val = umap_embeddings[idx, 0]
+        y_val = umap_embeddings[idx, 1]
+
+        # Skip nodes with NaN or infinite coordinates
+        if np.isnan(x_val) or np.isnan(y_val) or np.isinf(x_val) or np.isinf(y_val):
+            continue
+
+        nodes.append({
+            "id": f"book_{idx}",
+            "title": clean_value(row.get('book_title', 'Unknown')) or 'Unknown',
+            "author": clean_value(row.get('author', 'Unknown')) or 'Unknown',
+            "publication_date": clean_value(row.get('publication_date')),
+            "x": float(x_val),
+            "y": float(y_val)
+        })
+
+    return {"nodes": nodes}
+
 
 @app.get("/api/graph")
 def get_graph(top_k: int = 5, threshold: float = 0.5):

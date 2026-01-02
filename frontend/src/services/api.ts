@@ -5,7 +5,18 @@ const API_BASE_URL = '/api';
 
 export const api = {
   /**
-   * Fetch the book graph with nodes and edges
+   * Fetch book nodes for scatter plot visualization (lightweight, no similarity computation)
+   */
+  async getNodes(): Promise<GraphData> {
+    const response = await axios.get<{ nodes?: GraphData['nodes']; error?: string }>(`${API_BASE_URL}/nodes`);
+    if (response.data.error || !response.data.nodes) {
+      throw new Error(response.data.error || 'Failed to load nodes');
+    }
+    return { nodes: response.data.nodes, links: [] };
+  },
+
+  /**
+   * Fetch the book graph with nodes and edges (for future BERTopic use)
    * @param topK - Number of nearest neighbors per book (default: 5)
    * @param threshold - Minimum similarity threshold (default: 0.5)
    */
