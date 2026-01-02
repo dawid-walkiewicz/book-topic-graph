@@ -101,7 +101,7 @@ export const GraphVisualization = ({
         gap={2}
       >
         <CircularProgress size={60} />
-        <Typography variant="h6">Wczytuję dane książek...</Typography>
+        <Typography variant="h6">Loading book data...</Typography>
       </Box>
     );
   }
@@ -115,7 +115,7 @@ export const GraphVisualization = ({
         height="100vh"
       >
         <Typography variant="h6" color="text.secondary">
-          Brak danych do wyświetlenia
+          No data to display
         </Typography>
       </Box>
     );
@@ -159,7 +159,7 @@ export const GraphVisualization = ({
           }}
         >
           <CircularProgress size={60} />
-          <Typography variant="h6">Renderowanie punktów...</Typography>
+          <Typography variant="h6">Rendering points...</Typography>
         </Box>
       )}
       {hoveredNode && (

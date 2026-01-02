@@ -48,7 +48,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
         onBookAdded();
       }, 1000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Wystąpił błąd podczas dodawania książki');
+      setError(err.response?.data?.error || 'An error occurred while adding the book');
     } finally {
       setLoading(false);
     }
@@ -59,11 +59,11 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
   return (
     <Box component="form" onSubmit={handleSubmit}>
       <Typography variant="h5" gutterBottom>
-        Dodaj Nową Książkę
+        Add New Book
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Wprowadź dane książki, aby dodać ją do grafu powiązań.
+        Enter book details to add it to the visualization.
       </Typography>
 
       {error && (
@@ -74,13 +74,13 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
 
       {success && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Książka została pomyślnie dodana!
+          Book has been added successfully!
         </Alert>
       )}
 
       <TextField
         fullWidth
-        label="Tytuł"
+        label="Title"
         value={formData.title}
         onChange={handleChange('title')}
         margin="normal"
@@ -90,7 +90,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
 
       <TextField
         fullWidth
-        label="Autor"
+        label="Author"
         value={formData.author}
         onChange={handleChange('author')}
         margin="normal"
@@ -100,7 +100,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
 
       <TextField
         fullWidth
-        label="Streszczenie fabularne"
+        label="Plot Summary"
         value={formData.plot_summary}
         onChange={handleChange('plot_summary')}
         margin="normal"
@@ -108,7 +108,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
         multiline
         rows={8}
         disabled={loading}
-        helperText="Wprowadź pełne streszczenie książki - im bardziej szczegółowe, tym lepiej."
+        helperText="Enter a detailed plot summary - the more detailed, the better."
       />
 
       <Button
@@ -118,7 +118,7 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
         sx={{ mt: 3 }}
         disabled={!isFormValid || loading}
       >
-        {loading ? <CircularProgress size={24} /> : 'Dodaj Książkę'}
+        {loading ? <CircularProgress size={24} /> : 'Add Book'}
       </Button>
     </Box>
   );

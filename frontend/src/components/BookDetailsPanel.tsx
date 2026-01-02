@@ -6,7 +6,6 @@ import {
   Button,
   Typography,
   Box,
-  Chip,
 } from '@mui/material';
 import type { GraphNode } from '../types/graph';
 import PersonIcon from '@mui/icons-material/Person';
@@ -39,7 +38,7 @@ export const BookDetailsPanel = ({ book, open, onClose }: BookDetailsPanelProps)
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <PersonIcon color="action" />
             <Typography variant="body1">
-              <strong>Autor:</strong> {book.author}
+              <strong>Author:</strong> {book.author}
             </Typography>
           </Box>
 
@@ -47,39 +46,16 @@ export const BookDetailsPanel = ({ book, open, onClose }: BookDetailsPanelProps)
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CalendarTodayIcon color="action" />
               <Typography variant="body1">
-                <strong>Data publikacji:</strong> {book.publication_date}
+                <strong>Publication Date:</strong> {book.publication_date}
               </Typography>
             </Box>
           )}
-
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              <strong>ID węzła:</strong> {book.id}
-            </Typography>
-          </Box>
-
-          {(book.x !== undefined && book.y !== undefined) && (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                <strong>Współrzędne w grafie:</strong> ({book.x.toFixed(2)}, {book.y.toFixed(2)})
-              </Typography>
-            </Box>
-          )}
-
-          <Box sx={{ mt: 2 }}>
-            <Chip
-              label="Kliknij na inne książki, aby zobaczyć ich szczegóły"
-              color="primary"
-              variant="outlined"
-              size="small"
-            />
-          </Box>
         </Box>
       </DialogContent>
 
       <DialogActions>
         <Button onClick={onClose} variant="contained">
-          Zamknij
+          Close
         </Button>
       </DialogActions>
     </Dialog>

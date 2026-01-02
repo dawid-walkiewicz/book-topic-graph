@@ -64,12 +64,12 @@ reducer = umap.UMAP(
     metric='cosine',
     random_state=42
 )
-# Fit the UMAP reducer on the existing embeddings
+# Fit the UMAP reducer on full (384-dim) embeddings
+# Note: We need the fitted model to transform NEW books added via /books/new/
+# The 2D umap_embeddings are pre-computed outputs, but we need the model trained
+# on high-dim data to project new points into the same space
 if data_loaded and embeddings_full is not None:
     reducer.fit(embeddings_full)
-elif data_loaded:
-    # Fallback to 2D embeddings if full embeddings not available
-    reducer.fit(umap_embeddings)
 
 
 

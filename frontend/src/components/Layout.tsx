@@ -7,7 +7,6 @@ import {
   Drawer,
   Box,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import AddIcon from '@mui/icons-material/Add';
 
 interface LayoutProps {
@@ -26,18 +25,8 @@ export const Layout = ({ children, drawerContent }: LayoutProps) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <AppBar position="static">
         <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-            onClick={toggleDrawer}
-          >
-            <MenuIcon />
-          </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Sieć Powiązań Między Książkami
+            Book Topic Graph
           </Typography>
           <IconButton
             size="large"

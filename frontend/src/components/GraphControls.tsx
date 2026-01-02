@@ -34,12 +34,12 @@ export const GraphControls = ({
       }}
     >
       <Typography variant="h6" gutterBottom>
-        Kontrolki
+        Controls
       </Typography>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" gutterBottom>
-          Rozmiar punktów: {nodeSize}px
+          Point Size: {nodeSize}px
         </Typography>
         <Slider
           value={nodeSize}
@@ -66,7 +66,7 @@ export const GraphControls = ({
         onClick={onCenterView}
         sx={{ mb: 2 }}
       >
-        Wyśrodkuj Widok
+        Center View
       </Button>
 
       <Button
@@ -75,7 +75,7 @@ export const GraphControls = ({
         startIcon={<RefreshIcon />}
         onClick={onRerender}
       >
-        Odśwież Dane
+        Refresh Data
       </Button>
     </Paper>
   );
