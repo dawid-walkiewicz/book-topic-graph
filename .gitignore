@@ -120,6 +120,7 @@ data/booksummaries.txt
 data/processed_book_data.csv
 data/book_embeddings.npy
 data/book_embeddings_2d.npy
+data/umap_embeddings.npy
 data/model
 
 backend/__pycache__/
