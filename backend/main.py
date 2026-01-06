@@ -89,7 +89,9 @@ def get_books():
         return {"error": "Data could not be loaded."}
     else:
         # Load embeddings and book data and merge them
-        books_response = books_df.copy()
+        # Limit to books that have embeddings
+        max_items = len(umap_embeddings)
+        books_response = books_df.iloc[:max_items].copy()
         books_response['x'] = umap_embeddings[:, 0]
         books_response['y'] = umap_embeddings[:, 1]
         # remove unnecessary columns
@@ -116,17 +118,22 @@ def get_nodes():
             return None
         return val
 
+    # Limit to the number of embeddings we have
+    max_items = len(umap_embeddings)
+
     nodes = []
-    for idx, row in books_df.iterrows():
-        x_val = umap_embeddings[idx, 0]
-        y_val = umap_embeddings[idx, 1]
+    for i, (idx, row) in enumerate(books_df.iterrows()):
+        if i >= max_items:
+            break
+        x_val = umap_embeddings[i, 0]
+        y_val = umap_embeddings[i, 1]
 
         # Skip nodes with NaN or infinite coordinates
         if np.isnan(x_val) or np.isnan(y_val) or np.isinf(x_val) or np.isinf(y_val):
             continue
 
         nodes.append({
-            "id": f"book_{idx}",
+            "id": f"book_{i}",
             "title": clean_value(row.get('book_title', 'Unknown')) or 'Unknown',
             "author": clean_value(row.get('author', 'Unknown')) or 'Unknown',
             "publication_date": clean_value(row.get('publication_date')),
@@ -163,24 +170,29 @@ def get_graph(top_k: int = 5, threshold: float = 0.5):
 
     print(f"Cache MISS for {cache_key} - Computing graph...")
 
+    # Limit to the number of embeddings we have
+    max_items = min(len(umap_embeddings), len(embeddings_full))
+
     # Prepare nodes
     nodes = []
     valid_indices = set()  # Track which indices have valid coordinates
-    for idx, row in books_df.iterrows():
-        x_val = umap_embeddings[idx, 0]
-        y_val = umap_embeddings[idx, 1]
+    for i, (idx, row) in enumerate(books_df.iterrows()):
+        if i >= max_items:
+            break
+        x_val = umap_embeddings[i, 0]
+        y_val = umap_embeddings[i, 1]
 
         # Skip nodes with NaN or infinite coordinates
         if np.isnan(x_val) or np.isnan(y_val) or np.isinf(x_val) or np.isinf(y_val):
             continue
 
         # Also check if the full embedding has any NaN/inf values
-        if np.any(np.isnan(embeddings_full[idx])) or np.any(np.isinf(embeddings_full[idx])):
+        if np.any(np.isnan(embeddings_full[i])) or np.any(np.isinf(embeddings_full[i])):
             continue
 
-        valid_indices.add(idx)
+        valid_indices.add(i)
         node = {
-            "id": f"book_{idx}",
+            "id": f"book_{i}",
             "title": row.get('book_title', 'Unknown'),
             "author": row.get('author', 'Unknown'),
             "publication_date": row.get('publication_date', None),
