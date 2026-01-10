@@ -1,10 +1,11 @@
 from bertopic import BERTopic
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import pickle
 from sentence_transformers import SentenceTransformer
+import traceback
 
 app = FastAPI()
 
@@ -70,7 +71,7 @@ else:
     print("Full embeddings file not found.")
 
 if topic_model_file.exists():
-    topic_model = BERTopic.load(str(topic_model_file))
+    topic_model = BERTopic.load(str(topic_model_file), embedding_model='sentence-transformers/all-mpnet-base-v2')
 else:
     print("Topic model file not found.")
 
@@ -96,45 +97,72 @@ else:
 # model and reducer can be loaded here if needed for other endpoints
 model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
 
+
 @app.get("/")
 def home():
     """ Simple test endpoint returning a greeting message. """
     return {"message": "hello"}
 
 
-@app.get("/api/nodes")
-def get_nodes():
+def clean_value(val):
+    """Convert pandas NaN/NaT to None for JSON serialization"""
+    if pd.isna(val):
+        return None
+    return val
+
+
+def get_books_with_reduced_coordinates(reducer_name: str):
     """
-    Lightweight endpoint - returns only node positions for scatter plot visualization.
-    No similarity computation, much faster than /api/graph.
+    Generalized function to get book data with reduced coordinates.
     """
     if not data_loaded:
         return {"error": "Data could not be loaded."}
 
-    def clean_value(val):
-        """Convert pandas NaN/NaT to None for JSON serialization"""
-        if pd.isna(val):
-            return None
-        return val
+    coord_x = f"x_{reducer_name}"
+    coord_y = f"y_{reducer_name}"
 
-    nodes = []
+    books = []
     for i, (idx, row) in enumerate(books_df.iterrows()):
         # Skip nodes with NaN or infinite coordinates
-        if np.isnan(row['x_umap']) or np.isnan(row['y_umap']) or np.isinf(row['x_umap']) or np.isinf(row['y_umap']):
+        if np.isnan(row[coord_x]) or np.isnan(row[coord_y]) or np.isinf(row[coord_x]) or np.isinf(row[coord_y]):
             continue
 
-        nodes.append({
+        books.append({
             "id": f"book_{i}",
             "title": clean_value(row.get('title', 'Unknown')) or 'Unknown',
             "author": clean_value(row.get('author', 'Unknown')) or 'Unknown',
             "publication_date": clean_value(row.get('publication_date')),
             "genres": clean_value(row.get('genres')),
             "topic": clean_value(row.get('topic_label')),
-            "x": row['x_umap'],
-            "y": row['y_umap']
+            "x": row[coord_x],
+            "y": row[coord_y]
         })
 
-    return {"nodes": nodes}
+    return {"books": books}
+
+
+@app.get("/api/nodes")
+def get_nodes():
+    """
+    Lightweight endpoint - returns only node positions for scatter plot visualization.
+    """
+    books = get_books_with_reduced_coordinates("umap")["books"]
+    return {"nodes": books}
+
+
+@app.get("/api/pca")
+def get_books_with_pca():
+    return get_books_with_reduced_coordinates("pca")
+
+
+@app.get("/api/umap")
+def get_books_with_umap():
+    return get_books_with_reduced_coordinates("umap")
+
+
+@app.get("/api/hybrid")
+def get_books_with_hybrid():
+    return get_books_with_reduced_coordinates("hybrid")
 
 
 @app.post("/books/new/")
@@ -142,20 +170,38 @@ async def add_book(request: Request):
     """ Endpoint to add a new book embeding and return its reduced coordinates.
     Expects a JSON payload with 'title', 'author', and 'plot_summary'.
     """
+    global books_df
+
     try:
         data = await request.json()
         new_book = data
-        # print(new_book)
-        # add embedding and reduce dimensions
-        new_embedding = model.encode([new_book['plot_summary']])
-        new_point = umap_model.transform(new_embedding)
+        new_embedding = model.encode([new_book['plot_summary']], normalize_embeddings=True)
+        pca_coordinates = pca_model.transform(new_embedding)
+        umap_coordinates = umap_model.transform(new_embedding)
+        hybrid_coordinates = hybrid_model_umap.transform(hybrid_model_pca.transform(new_embedding))
+        topic, _ = topic_model.transform([new_book['plot_summary']], new_embedding)
+        topic_label = topic_model.custom_labels_[topic[0]]
+
         book = {
+            "wiki_id": -1,
             "title": new_book['title'],
             "author": new_book['author'],
-            "x": float(new_point[0][0]),
-            "y": float(new_point[0][1])
+            "publication_date": None,
+            "plot_summary": new_book['plot_summary'],
+            "topic": topic[0],
+            "topic_label": topic_label,
+            "pca_x": pca_coordinates[0][0],
+            "pca_y": pca_coordinates[0][1],
+            "umap_x": umap_coordinates[0][0],
+            "umap_y": umap_coordinates[0][1],
+            "hybrid_x": hybrid_coordinates[0][0],
+            "hybrid_y": hybrid_coordinates[0][1],
         }
+        books_df = pd.concat([books_df, pd.DataFrame([book])], ignore_index=True)
 
-        return {"message": "Book received", "book": book}
+        result_dict = books_df.iloc[-1].replace({np.nan: None}).to_dict()
+
+        return {"message": "Book received", "book": result_dict}
     except Exception as e:
-        return {"error": "wrong data format"}
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

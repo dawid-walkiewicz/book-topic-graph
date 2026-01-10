@@ -38,8 +38,11 @@ export const AddBookForm = ({ onBookAdded }: AddBookFormProps) => {
     setError(null);
     setSuccess(false);
 
+    console.log(formData)
+
     try {
-      await api.addBook(formData);
+      const data = await api.addBook(formData);
+      console.log(data)
       setSuccess(true);
       setFormData({ title: '', author: '', plot_summary: '' });
 
