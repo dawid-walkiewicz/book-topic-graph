@@ -16,18 +16,6 @@ export const api = {
   },
 
   /**
-   * Fetch the book graph with nodes and edges (for future BERTopic use)
-   * @param topK - Number of nearest neighbors per book (default: 5)
-   * @param threshold - Minimum similarity threshold (default: 0.5)
-   */
-  async getGraph(topK: number = 5, threshold: number = 0.5): Promise<GraphData> {
-    const response = await axios.get<GraphData>(`${API_BASE_URL}/graph`, {
-      params: { top_k: topK, threshold },
-    });
-    return response.data;
-  },
-
-  /**
    * Add a new book to the collection
    * @param book - New book data
    */

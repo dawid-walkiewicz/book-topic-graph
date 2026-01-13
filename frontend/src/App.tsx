@@ -22,7 +22,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<GraphNode | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [nodeSize, setNodeSize] = useState<number>(2);
+  const [nodeSize, setNodeSize] = useState<number>(6);
 
   const loadData = async () => {
     setLoading(true);
