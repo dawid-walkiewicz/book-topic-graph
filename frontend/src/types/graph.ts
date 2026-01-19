@@ -5,7 +5,15 @@ export type GraphNode = {
   publication_date?: string | null;
   x?: number;
   y?: number;
+  topic?: number;
+  topic_label?: string;
+  wiki_id?: number | null;
+  genres?: string | null;
 }
+
+export type EndpointType = 'umap' | 'pca' | 'hybrid';
+
+export type BookSourceFilter = 'all' | 'user-added' | 'original';
 
 export type GraphLink = {
   source: string;

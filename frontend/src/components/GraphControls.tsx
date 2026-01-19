@@ -1,12 +1,19 @@
 import { Box, Slider, Button, Typography, Paper } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
+import { EndpointSelector } from "./EndpointSelector";
+import { BookSourceFilter } from "./BookSourceFilter";
+import type { EndpointType, BookSourceFilter as BookSourceFilterType } from "../types/graph";
 
 interface GraphControlsProps {
   onRerender: () => void;
   nodeSize: number;
   onNodeSizeChange: (value: number) => void;
   onCenterView: () => void;
+  endpoint: EndpointType;
+  onEndpointChange: (endpoint: EndpointType) => void;
+  sourceFilter: BookSourceFilterType;
+  onSourceFilterChange: (value: BookSourceFilterType) => void;
 }
 
 export const GraphControls = ({
@@ -14,6 +21,10 @@ export const GraphControls = ({
   nodeSize,
   onNodeSizeChange,
   onCenterView,
+  endpoint,
+  onEndpointChange,
+  sourceFilter,
+  onSourceFilterChange,
 }: GraphControlsProps) => {
   const handleNodeSizeChange = (_event: Event, value: number | number[]) => {
     onNodeSizeChange(value as number);
@@ -36,6 +47,16 @@ export const GraphControls = ({
       <Typography variant="h6" gutterBottom>
         Controls
       </Typography>
+
+      <EndpointSelector
+        value={endpoint}
+        onChange={onEndpointChange}
+      />
+
+      <BookSourceFilter
+        value={sourceFilter}
+        onChange={onSourceFilterChange}
+      />
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" gutterBottom>
