@@ -8,12 +8,7 @@ CMU Book Summary Dataset: https://www.kaggle.com/datasets/ymaricar/cmu-book-summ
 
 ## Przygotowanie danych
 
-1. Uruchom notebook `data/data_processing.ipynb` aby wygenerować niezbędne pliki:
-   - `book_embeddings.npy` - embeddingi 384D
-   - `umap_embeddings.npy` - współrzędne 2D (UMAP)
-   - `processed_book_data.csv` - metadane książek
-
-2. Pliki te są wymagane do uruchomienia backendu.
+Uruchom notebook `data/data_processing.ipynb` aby wygenerować niezbędne pliki.
 
 ## Backend
 
@@ -28,21 +23,13 @@ pip install -r backend/requirements.txt
 ### Uruchomienie
 
 ```bash
-uvicorn backend.main:app --reload
+cd backend
+uvicorn main:app --reload
 ```
-
-Backend będzie dostępny pod adresem: http://localhost:8000
-
-### Endpointy API
-
-- `GET /` - health check
-- `GET /books/` - lista wszystkich książek z współrzędnymi 2D
-- `GET /api/graph?top_k=5&threshold=0.5` - graf z węzłami i krawędziami
-- `POST /books/new/` - dodanie nowej książki
 
 ## Frontend
 
-Frontend React + TypeScript + Vite z wizualizacją grafu.
+Frontend React + TypeScript + Vite do wizualizacji.
 
 ### Instalacja
 
@@ -56,54 +43,4 @@ npm install
 ```bash
 cd frontend
 npm run dev
-```
-
-Frontend będzie dostępny pod adresem: http://localhost:5173
-
-### Funkcjonalności
-
-- Interaktywna wizualizacja grafu książek (zoom, pan, drag)
-- Kliknięcie na węzeł wyświetla szczegóły książki
-- Dodawanie nowych książek przez formularz
-- Krawędzie reprezentują podobieństwo tematyczne (cosine similarity)
-
-## Technologie
-
-### Backend
-- FastAPI
-- SentenceTransformers
-- UMAP
-- NumPy, Pandas, scikit-learn
-
-### Frontend
-- React 18 + TypeScript
-- Vite
-- Material-UI
-- react-force-graph-2d
-- Axios
-
-## Architektura
-
-```
-┌─────────────────────────────────────────┐
-│  Warstwa Offline (Jednorazowe)          │
-│  - Notebook: data_processing.ipynb      │
-│  - Generuje embeddingi i redukcje UMAP  │
-└─────────────────┬───────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────┐
-│  Backend: FastAPI (Python)              │
-│  - Ładuje embeddingi i model            │
-│  - GET /api/graph                       │
-│  - POST /books/new/                     │
-└─────────────────┬───────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────┐
-│  Frontend: React + TypeScript           │
-│  - Wizualizacja grafu (react-force-2d)  │
-│  - Formularz dodawania książek          │
-│  - Panel szczegółów książki             │
-└─────────────────────────────────────────┘
 ```
