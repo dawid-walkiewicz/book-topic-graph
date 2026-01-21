@@ -129,11 +129,13 @@ def get_books_with_reduced_coordinates(reducer_name: str):
 
         books.append({
             "id": f"book_{i}",
+            "wiki_id": clean_value(row.get('wiki_id')),
             "title": clean_value(row.get('title', 'Unknown')) or 'Unknown',
             "author": clean_value(row.get('author', 'Unknown')) or 'Unknown',
             "publication_date": clean_value(row.get('publication_date')),
             "genres": clean_value(row.get('genres')),
-            "topic": clean_value(row.get('topic_label')),
+            "topic": clean_value(row.get('topic')),
+            "topic_label": clean_value(row.get('topic_label')),
             "x": row[coord_x],
             "y": row[coord_y]
         })
@@ -190,12 +192,12 @@ async def add_book(request: Request):
             "plot_summary": new_book['plot_summary'],
             "topic": topic[0],
             "topic_label": topic_label,
-            "pca_x": pca_coordinates[0][0],
-            "pca_y": pca_coordinates[0][1],
-            "umap_x": umap_coordinates[0][0],
-            "umap_y": umap_coordinates[0][1],
-            "hybrid_x": hybrid_coordinates[0][0],
-            "hybrid_y": hybrid_coordinates[0][1],
+            "x_pca": float(pca_coordinates[0][0]),
+            "y_pca": float(pca_coordinates[0][1]),
+            "x_umap": float(umap_coordinates[0][0]),
+            "y_umap": float(umap_coordinates[0][1]),
+            "x_hybrid": float(hybrid_coordinates[0][0]),
+            "y_hybrid": float(hybrid_coordinates[0][1]),
         }
         books_df = pd.concat([books_df, pd.DataFrame([book])], ignore_index=True)
 
